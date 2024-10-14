@@ -60,18 +60,22 @@
 
 <script setup>
 import { ref } from "vue";
+import { useQuasar } from "quasar";
 import { useAuthStore } from "src/stores/auth";
 import { useRouter } from "vue-router";
 
 const username = ref("");
 const password = ref("");
 const loading = ref(false);
+const loginError = ref(null);
 
 const authStore = useAuthStore();
 const router = useRouter();
+const $q = useQuasar();
 
 const handleLogin = async () => {
   loading.value = true;
+  loginError.value = null;
   try {
     // Attempt to log in with provided credentials
     await authStore.login({
@@ -83,13 +87,25 @@ const handleLogin = async () => {
     if (authStore.role) {
       switch (authStore.role) {
         case "admin":
-          await router.push("/admin");
+          router.push("/admin");
+          $q.notify({
+            type: "positive",
+            message: "Login successful! Welcome, Admin.",
+          });
           break;
         case "educator":
-          await router.push("/educator");
+          router.push("/educator");
+          $q.notify({
+            type: "positive",
+            message: "Login successful! Welcome, Educator.",
+          });
           break;
         case "student":
-          await router.push("/student");
+          router.push("/student");
+          $q.notify({
+            type: "positive",
+            message: "Login successful! Welcome, Student.",
+          });
           break;
         default:
           await router.push("/");
@@ -99,6 +115,10 @@ const handleLogin = async () => {
     }
   } catch (error) {
     // Handle login error (e.g., show error notification)
+    $q.notify({
+      type: "negative",
+      message: "Invalid username or password. Please try again.",
+    });
     console.error("Login failed", error);
   } finally {
     loading.value = false;

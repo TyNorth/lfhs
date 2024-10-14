@@ -27,6 +27,9 @@ export const usePersonnelStore = defineStore("personnel", {
         (person) => person.role === "educator" && person.username === id
       );
     },
+    getPersonnelById: (state) => (id) => {
+      return state.personnel.find((person) => person.id === id);
+    },
   },
   actions: {
     addPersonnel(personData) {
@@ -36,6 +39,19 @@ export const usePersonnelStore = defineStore("personnel", {
         id: nanoid(),
       };
       this.personnel.push(newPerson);
+    },
+    updatePersonnel(updatedData) {
+      // Find the personnel by ID and update their details
+      const index = this.personnel.findIndex(
+        (person) => person.id === updatedData.id
+      );
+      if (index !== -1) {
+        this.personnel[index] = { ...this.personnel[index], ...updatedData };
+      }
+    },
+    deletePersonnel(id) {
+      // Remove personnel by ID
+      this.personnel = this.personnel.filter((person) => person.id !== id);
     },
     assignClassToEducator(educatorId, classId) {
       const educator = this.getEducatorById(educatorId);

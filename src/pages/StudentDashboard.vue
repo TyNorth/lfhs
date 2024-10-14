@@ -16,6 +16,10 @@
     <q-card class="q-pa-md q-mb-md">
       <q-card-section>
         <div class="text-h6">My Classes</div>
+        <div class="text-subtitle1 text-grey">Student ID: {{ studentId }}</div>
+        <div class="text-subtitle1 text-grey">
+          Grade Level: {{ gradeLevel }}
+        </div>
       </q-card-section>
       <q-table
         :rows="classesList"
@@ -53,12 +57,12 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useClassesStore } from "src/stores/classes";
 import { useAuthStore } from "src/stores/auth";
 import { usePersonnelStore } from "src/stores/personnel";
+import mockClasses from "src/mocks/mockClasses";
+import mockUsers from "src/mocks/mockUsers";
 import { useRouter } from "vue-router";
 
-const classesStore = useClassesStore();
 const authStore = useAuthStore();
 const personnelStore = usePersonnelStore();
 const router = useRouter();
@@ -67,6 +71,8 @@ const classesList = ref([]);
 const selectedClass = ref(null);
 const selectedClassEducator = ref("");
 const pagination = ref({ page: 1, rowsPerPage: 10 });
+const studentId = ref("");
+const gradeLevel = ref("");
 
 const classesColumns = [
   { name: "name", align: "left", label: "Class Name", field: "name" },
@@ -91,8 +97,15 @@ const toggleClassDetails = (cls) => {
     selectedClassEducator.value = "";
   } else {
     selectedClass.value = cls;
-    const educator = personnelStore.getEducatorById(cls.educator);
-    selectedClassEducator.value = educator ? educator.username : "Unknown";
+    const educator = mockUsers.find((user) => user.username === cls.educator);
+    if (educator) {
+      const [firstName, lastName] = educator.username.split(".");
+      selectedClassEducator.value = `${
+        firstName.charAt(0).toUpperCase() + firstName.slice(1)
+      } ${lastName.charAt(0).toUpperCase() + lastName.slice(1)}`;
+    } else {
+      selectedClassEducator.value = "Unknown";
+    }
   }
 };
 
@@ -102,7 +115,15 @@ const handleLogout = () => {
 };
 
 onMounted(() => {
-  classesList.value = classesStore.getClassesByStudentId(authStore.user);
+  // Get student information from mock users
+  const student = mockUsers.find((user) => user.username === authStore.user);
+  studentId.value = student ? student.studentId : "Unknown";
+  gradeLevel.value = student ? student.gradeLevel : "Unknown";
+
+  // Filter mock classes based on the student's enrollment
+  classesList.value = mockClasses.filter((cls) =>
+    cls.enrolledStudents.includes(authStore.user)
+  );
 });
 </script>
 

@@ -33,6 +33,9 @@ export const useAuthStore = defineStore("auth", {
         this.role = user.role;
         this.token = user.token;
 
+        // Wait until the state is updated before navigating
+        await this.$patch();
+
         // Set route dynamically based on role
         switch (this.role) {
           case "admin":
@@ -51,6 +54,8 @@ export const useAuthStore = defineStore("auth", {
         console.error("Login failed", error);
         throw new Error("Login failed");
       }
+
+      return this.user;
     },
     logout() {
       this.user = null;

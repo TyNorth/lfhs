@@ -16,6 +16,9 @@
     <q-card class="q-pa-md q-mb-md">
       <q-card-section>
         <div class="text-h6">My Classes</div>
+        <div class="text-subtitle1 text-grey">
+          Department: {{ educatorDepartment }}
+        </div>
       </q-card-section>
       <q-table
         :rows="classesList"
@@ -46,11 +49,13 @@
         <div><strong>Class Name:</strong> {{ selectedClass.name }}</div>
         <div><strong>Description:</strong> {{ selectedClass.description }}</div>
         <div><strong>Enrolled Students:</strong></div>
-        <q-list>
-          <q-item v-for="student in selectedClassRoster" :key="student.id">
-            <q-item-section>{{ student.name }}</q-item-section>
-          </q-item>
-        </q-list>
+        <q-table
+          :rows="selectedClassRoster"
+          :columns="studentColumns"
+          row-key="id"
+          flat
+          bordered
+        />
       </q-card-section>
     </q-card>
   </q-page>
@@ -58,13 +63,12 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useClassesStore } from "src/stores/classes";
 import { useAuthStore } from "src/stores/auth";
 import { usePersonnelStore } from "src/stores/personnel";
-import { useRouter } from "vue-router";
 import mockClasses from "src/mocks/mockClasses";
+import mockUsers from "src/mocks/mockUsers";
+import { useRouter } from "vue-router";
 
-const classesStore = useClassesStore();
 const authStore = useAuthStore();
 const personnelStore = usePersonnelStore();
 const router = useRouter();
@@ -73,6 +77,7 @@ const classesList = ref([]);
 const selectedClass = ref(null);
 const selectedClassRoster = ref([]);
 const pagination = ref({ page: 1, rowsPerPage: 10 });
+const educatorDepartment = ref("");
 
 const classesColumns = [
   { name: "name", align: "left", label: "Class Name", field: "name" },
@@ -91,6 +96,17 @@ const classesColumns = [
   },
 ];
 
+const studentColumns = [
+  { name: "name", align: "left", label: "Student Name", field: "name" },
+  { name: "studentId", align: "left", label: "Student ID", field: "studentId" },
+  {
+    name: "gradeLevel",
+    align: "left",
+    label: "Grade Level",
+    field: "gradeLevel",
+  },
+];
+
 const toggleClassDetails = (cls) => {
   if (selectedClass.value && selectedClass.value.id === cls.id) {
     selectedClass.value = null;
@@ -99,9 +115,23 @@ const toggleClassDetails = (cls) => {
     selectedClass.value = cls;
     selectedClassRoster.value = cls.enrolledStudents.map((studentId) => {
       const student = personnelStore.getStudentById(studentId);
-      return student
-        ? { id: studentId, name: student.username }
-        : { id: studentId, name: "Unknown" };
+      if (student) {
+        const [firstName, lastName] = student.username.split(".");
+        return {
+          id: studentId,
+          name: `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${
+            lastName.charAt(0).toUpperCase() + lastName.slice(1)
+          }`,
+          studentId: student.studentId,
+          gradeLevel: student.gradeLevel,
+        };
+      }
+      return {
+        id: studentId,
+        name: "Unknown",
+        studentId: "N/A",
+        gradeLevel: "N/A",
+      };
     });
   }
 };
@@ -112,6 +142,10 @@ const handleLogout = () => {
 };
 
 onMounted(() => {
+  // Get educator department from mock users
+  const educator = mockUsers.find((user) => user.username === authStore.user);
+  educatorDepartment.value = educator ? educator.department : "Unknown";
+
   // Filter mock classes based on the educator's username
   classesList.value = mockClasses.filter(
     (cls) => cls.educator === authStore.user

@@ -24,10 +24,12 @@ export default route(function (/* { store, ssrContext } */) {
   // Adding navigation guards
   Router.beforeEach((to, from, next) => {
     const authStore = useAuthStore();
+    console.log("Role in guard:", authStore.role);
 
     // Check if the route requires authentication
     // Check if the route requires authentication
     if (to.meta.requiresAuth) {
+      console.log(authStore.isAuthenticated);
       if (!authStore.isAuthenticated) {
         next({ name: "login" });
       } else if (to.meta.role && authStore.role !== to.meta.role) {
